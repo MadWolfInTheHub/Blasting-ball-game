@@ -1,7 +1,5 @@
 import { context } from "./context.js";
 
-export const projectiles = []
-
 export class Projectile {
   constructor (x, y, radius, color, velocity) {
     this.x = x;

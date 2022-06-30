@@ -1,20 +1,37 @@
 import { canvas, context } from "./components/context.js";
 import { Player } from "./components/Player.js"
-import { Projectile, projectiles } from './components/Projectile.js'
-import { spawnEnemies, enemies } from "./components/Enemy/spawnEnemies.js";
-import { Partycle, particles } from "./components/Partycle/Partycle.js";
-console.log(particles)
+import { Projectile } from './components/Projectile.js'
+import { spawnEnemies, stopSpawningEnemies } from "./components/Enemy/spawnEnemies.js";
+import { Partycle } from "./components/Partycle/Partycle.js";
 
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
+const scoreEl = document.querySelector("#score")
+const startGameBtn = document.querySelector('#startGameBtn')
+const modulEl = document.querySelector('#modulEl')
+const scoreBoard = document.querySelector('#scoreBoard')
+
 const x = canvas.width / 2;
 const y = canvas.height / 2;
 
+let player = new Player(x, y, 15, 'white')
+let particles = []
+let projectiles = []
+export let enemies = []
 
-const player = new Player(x, y, 15, 'white')
+function init() {
+  player = new Player(x, y, 15, 'white')
+  projectiles = []
+  enemies =  []
+  particles = []
+  score = 0;
+  scoreEl.innerHTML = score
+  scoreBoard.innerHTML = score
+}
 
 let animationId
+let score = 0;
 
 function animate () {
   animationId = requestAnimationFrame(animate);
@@ -22,8 +39,12 @@ function animate () {
   context.fillRect(0, 0, canvas.width, canvas.height)
   player.draw();
 
-  particles.forEach(particle => {
-    particle.update()
+  particles.forEach((particle, index) => {
+    if(particle.alpha <= 0 ){
+      particles.splice(index, 1)
+    } else {
+      particle.update()
+    }
   });
 
   projectiles.forEach((projectile, index) => {
@@ -49,6 +70,9 @@ function animate () {
 
     if(dist - enemy.radius - player.radius < 1) {
       cancelAnimationFrame(animationId)
+      modulEl.style.display = 'flex'
+      scoreBoard.innerHTML = score
+      stopSpawningEnemies()
     }
 
     projectiles.forEach((projectile, projectileIndex) => {
@@ -58,20 +82,27 @@ function animate () {
 
       if(dist - enemy.radius - projectile.radius < 1) {
 
-        for (let i = 0; i < 8; i++) {
+        // create explotins
+
+        for (let i = 0; i < enemy.radius * 2; i++) {
           particles.push(new Partycle(
             projectile.x, 
             projectile.y,
-            3, 
+            Math.random() * 2, 
             enemy.color,
             {
-              x: Math.random() - 0.5,
-              y: Math.random() - 0.5,
+              x:( Math.random() - 0.5) * (Math.random() * 6),
+              y: (Math.random() - 0.5) * (Math.random() * 6),
             }
           ))
         }
 
         if(enemy.radius - 10 > 5) {
+
+          // increase score
+          score += 10
+          scoreEl.innerHTML = score
+
           gsap.to(enemy, {
             radius: enemy.radius - 10
           })
@@ -79,6 +110,11 @@ function animate () {
             projectiles.splice(projectileIndex, 1)
           }, 0)
         } else {
+
+            // increase score bunus
+            score += 25
+            scoreEl.innerHTML = score
+
           setTimeout(() => {
             enemies.splice(index, 1)
             projectiles.splice(projectileIndex, 1)
@@ -114,10 +150,13 @@ addEventListener('click', (event) => {
   ))
 })
 
-animate()
-spawnEnemies()
 
-
+startGameBtn.addEventListener('click', () => {
+  init()
+  animate()
+  spawnEnemies()
+  modulEl.style.display = 'none'
+})
 // first learn about Math methods (sinc, cos atan@, hypot)
 // secondly learn about Canvas functions such as cancelAnimationFrame(), requestAnimationFrame()
 // third learn about fillStyle, fillRect methods
